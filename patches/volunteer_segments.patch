@@ -1,0 +1,13 @@
+# Reference: segments truncation patch for volunteer.py
+# Applied by: lib/patch/patch_volunteer.py (patch_segments_limit function)
+# Effect: Truncates segment list to 1000 before upload (server rejects >1000)
+
+# Before:
+#   "segments": segments,
+#
+# After:
+#   "segments": segments[:1000],
+
+# Why: The corpus API rejects uploads with more than 1000 segments.
+# Long audio files (1+ hour) can produce 5000-15000 segments.
+# Truncating keeps the first ~30-40 minutes of transcription.

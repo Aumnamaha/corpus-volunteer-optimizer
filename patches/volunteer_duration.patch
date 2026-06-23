@@ -1,0 +1,12 @@
+# Reference: duration filter patch for volunteer.py
+# Applied by: lib/patch/patch_volunteer.py (patch_duration_filter function)
+# Effect: Files under 100 seconds are skipped instantly (silent/noise/trash)
+
+# Inserted after _probe_audio_duration() call, before transcription starts:
+#
+#   if 0 < audio_duration < 100:
+#       statuses[i - 1]['state'] = 'failed'
+#       statuses[i - 1]['label'] = f'[dim]⏭ Skipped — too short ({audio_duration:.0f}s < 100s)[/dim]'
+#       _tick_elapsed()
+#       prog.update(task, advance=1)
+#       return

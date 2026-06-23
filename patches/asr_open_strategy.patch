@@ -1,0 +1,27 @@
+# Reference: 3-strategy av.open() fallback patch for asr.py
+# Applied by: lib/patch/patch_asr.py (patch_av_open function)
+# Effect: Tries 3 increasingly lenient strategies to open corrupt containers
+
+# Strategy 1: Normal open (default)
+# Strategy 2: err_detect=ignore_err (ignore corrupt packets)
+# Strategy 3: err_detect=ignore_err + fflags=discardcorrupt (discard corrupt frames)
+
+# Before:
+#   container = _av.open(str(audio_path))
+#
+# After:
+#   _strategies = [
+#       {},
+#       {"options": {"err_detect": "ignore_err"}},
+#       {"options": {"err_detect": "ignore_err", "fflags": "discardcorrupt"}},
+#   ]
+#   container = None; _last_exc = None
+#   for _s in _strategies:
+#       try:
+#           container = _av.open(str(audio_path), **_s)
+#           ... (audio stream check)
+#           break
+#       except RuntimeError: raise
+#       except Exception as exc: _last_exc = exc; container = None
+#   if container is None:
+#       raise RuntimeError(...)

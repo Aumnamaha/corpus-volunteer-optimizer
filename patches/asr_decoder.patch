@@ -1,0 +1,22 @@
+# Reference: packet-level fault tolerant decoder patch for asr.py
+# Applied by: lib/patch/patch_asr.py (patch_decoder function)
+# Replaces: container.decode(audio=0) with _safe_frames(container)
+# Effect: Corrupt packets are skipped individually instead of crashing the whole file
+
+# Before:
+#   for frame in itertools.chain(container.decode(audio=0), [None]):
+#
+# After:
+#   def _safe_frames(cont):
+#       try:
+#           for pkt in cont.demux(audio=0):
+#               try:
+#                   for frm in pkt.decode():
+#                       yield frm
+#               except Exception:
+#                   continue
+#       except Exception:
+#           pass
+#       yield None
+#
+#   for frame in _safe_frames(container):
