@@ -1,0 +1,17 @@
+{
+  "6.2": {
+    "wheel": "rocm6.2",
+    "url": "https://download.pytorch.org/whl/rocm6.2",
+    "comment": "ROCm 6.2 — RX 7000/6000 series"
+  },
+  "6.1": {
+    "wheel": "rocm6.1",
+    "url": "https://download.pytorch.org/whl/rocm6.1",
+    "comment": "ROCm 6.1"
+  },
+  "6.0": {
+    "wheel": "rocm6.0",
+    "url": "https://download.pytorch.org/whl/rocm6.0",
+    "comment": "ROCm 6.0"
+  }
+}

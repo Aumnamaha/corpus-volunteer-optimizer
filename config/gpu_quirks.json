@@ -1,0 +1,44 @@
+{
+  "compute_12": {
+    "name": "Blackwell (RTX 5000 series)",
+    "env": { "CORPUS_ASR_NO_COMPILE": "1" },
+    "max_gpu_workers": 1,
+    "reason": "torch.inductor CUDA graphs broken on Blackwell — disable compilation"
+  },
+  "compute_8_11": {
+    "name": "Ampere / Ada / Hopper (RTX 3000/4000 series)",
+    "env": {},
+    "max_gpu_workers": 2,
+    "reason": "Fully supported, no quirks needed"
+  },
+  "compute_7": {
+    "name": "Turing (RTX 2000 / GTX 1600 series)",
+    "env": {},
+    "max_gpu_workers": 1,
+    "reason": "Older architecture — limit concurrency to avoid OOM"
+  },
+  "compute_6": {
+    "name": "Pascal (GTX 1000 series)",
+    "env": {},
+    "max_gpu_workers": 1,
+    "reason": "Lower VRAM — single worker"
+  },
+  "amd_rdna": {
+    "name": "AMD RDNA (RX 5000/6000/7000)",
+    "env": { "PYTORCH_HIP_ALLOC_CONF": "garbage_collection_threshold:0.8" },
+    "max_gpu_workers": 1,
+    "reason": "ROCm HIP memory management tuning"
+  },
+  "intel_arc": {
+    "name": "Intel Arc",
+    "env": { "SYCL_CACHE_PERSISTENT": "1" },
+    "max_gpu_workers": 1,
+    "reason": "IPEX needs SYCL cache for stable inference"
+  },
+  "apple_silicon": {
+    "name": "Apple Silicon (M1/M2/M3/M4)",
+    "env": { "PYTORCH_ENABLE_MPS_FALLBACK": "1" },
+    "max_gpu_workers": 1,
+    "reason": "MPS fallback for ops not yet supported on Metal"
+  }
+}

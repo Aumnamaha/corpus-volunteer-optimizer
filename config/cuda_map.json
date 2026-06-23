@@ -1,0 +1,32 @@
+{
+  "13": {
+    "wheel": "cu132",
+    "url": "https://download.pytorch.org/whl/cu132",
+    "no_compile": true,
+    "comment": "CUDA 13.x — Blackwell RTX 5000 series"
+  },
+  "12.6": {
+    "wheel": "cu126",
+    "url": "https://download.pytorch.org/whl/cu126",
+    "no_compile": false,
+    "comment": "CUDA 12.6"
+  },
+  "12.4": {
+    "wheel": "cu124",
+    "url": "https://download.pytorch.org/whl/cu124",
+    "no_compile": false,
+    "comment": "CUDA 12.4"
+  },
+  "12.1": {
+    "wheel": "cu121",
+    "url": "https://download.pytorch.org/whl/cu121",
+    "no_compile": false,
+    "comment": "CUDA 12.1"
+  },
+  "11.8": {
+    "wheel": "cu118",
+    "url": "https://download.pytorch.org/whl/cu118",
+    "no_compile": false,
+    "comment": "CUDA 11.8 — GTX 1000/900 series"
+  }
+}
