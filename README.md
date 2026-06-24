@@ -107,9 +107,9 @@ corpus-client volunteer-compute
 CORPUS_ASR_NO_COMPILE=1 corpus-client volunteer-compute
 ```
 
-> **Why `--skip-update`?**
+> **Note on auto-updates:**
 > `corpus-client` auto-updates itself on every run. An auto-update wipes our patches.
-> Always use `--skip-update` to protect the optimizations.
+> corpus-client v0.1.1 removed the `--skip-update` flag. If patches break after an auto-update, run: `bash reapply.sh`
 > If an update does happen, re-apply patches with `bash reapply.sh`.
 
 ### Check Your Compute Hours
