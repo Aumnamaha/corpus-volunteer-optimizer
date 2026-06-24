@@ -17,7 +17,7 @@ if not r:
 print((r or list(m.values())[-1])['url'])
 ")
 info "Wheel index: $WHEEL"
-CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python*" -type f 2>/dev/null | head -1)
+CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python3*" -maxdepth 5 -type f 2>/dev/null | head -1)
 [ -z "$CORPUS_PY" ] && { error "corpus-client-cli not found"; exit 1; }
 UV_HTTP_TIMEOUT=300 uv pip install --python "$CORPUS_PY" torch --index-url "$WHEEL" --reinstall
 "$CORPUS_PY" -c "

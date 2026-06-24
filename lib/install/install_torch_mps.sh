@@ -2,8 +2,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$ROOT/lib/utils/colors.sh"
 header "Verifying Apple MPS (PyTorch built-in)"
-CORPUS_PY=$(find "$HOME/Library/Application Support/uv/tools/corpus-client-cli" -name "python*" -type f 2>/dev/null | head -1)
-[ -z "$CORPUS_PY" ] && CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python*" -type f 2>/dev/null | head -1)
+CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python3*" -maxdepth 5 -type f 2>/dev/null | head -1)
+[ -z "$CORPUS_PY" ] && CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python3*" -maxdepth 5 -type f 2>/dev/null | head -1)
 [ -z "$CORPUS_PY" ] && { warn "corpus-client-cli not found — skipping MPS check"; exit 0; }
 "$CORPUS_PY" -c "
 import torch

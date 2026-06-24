@@ -2,8 +2,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ROOT/lib/utils/colors.sh"
 header "Verification — corpus-volunteer-optimizer"
-CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python*" -type f 2>/dev/null | head -1)
-[ -z "$CORPUS_PY" ] && CORPUS_PY=$(find "$HOME/Library/Application Support/uv/tools/corpus-client-cli" -name "python*" -type f 2>/dev/null | head -1)
+CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python3*" -maxdepth 5 -type f 2>/dev/null | head -1)
+[ -z "$CORPUS_PY" ] && CORPUS_PY=$(find "$HOME/.local/share/uv/tools/corpus-client-cli" -name "python3*" -maxdepth 5 -type f 2>/dev/null | head -1)
 if [ -z "$CORPUS_PY" ]; then
   error "corpus-client-cli not found"
   exit 1
