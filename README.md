@@ -91,7 +91,7 @@ curl -fsSL https://raw.githubusercontent.com/Aumnamaha/corpus-volunteer-optimize
 ### Login to Corpus API
 
 ```bash
-corpus-client --skip-update login
+corpus-client login
 # Environment: prod
 # Phone: +91XXXXXXXXXX
 # Password: your password
@@ -101,10 +101,10 @@ corpus-client --skip-update login
 
 ```bash
 # All GPUs except Blackwell (RTX 5000 series):
-corpus-client --skip-update volunteer-compute
+corpus-client volunteer-compute
 
 # NVIDIA Blackwell only (RTX 5070 Ti, 5080, 5090):
-CORPUS_ASR_NO_COMPILE=1 corpus-client --skip-update volunteer-compute
+CORPUS_ASR_NO_COMPILE=1 corpus-client volunteer-compute
 ```
 
 > **Why `--skip-update`?**
@@ -115,7 +115,7 @@ CORPUS_ASR_NO_COMPILE=1 corpus-client --skip-update volunteer-compute
 ### Check Your Compute Hours
 
 ```bash
-corpus-client --skip-update profile
+corpus-client profile
 ```
 
 ---

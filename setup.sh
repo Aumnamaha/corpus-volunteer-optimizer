@@ -70,7 +70,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ALREADY_INSTALLED=false
 if command -v corpus-client &>/dev/null; then
-  CURRENT_VER=$(corpus-client --skip-update version 2>/dev/null || echo "unknown")
+  CURRENT_VER=$(corpus-client version 2>/dev/null || echo "unknown")
   info "Already installed: corpus-client $CURRENT_VER"
   ALREADY_INSTALLED=true
   read -p "  Reinstall/upgrade? [y/N] " -n 1 -r; echo
@@ -97,15 +97,15 @@ if ! command -v corpus-client &>/dev/null; then
   warn "corpus-client not in PATH — adding ~/.local/bin to PATH"
   export PATH="$HOME/.local/bin:$PATH"
 fi
-INSTALLED_VER=$(corpus-client --skip-update version 2>/dev/null || echo "unknown")
+INSTALLED_VER=$(corpus-client version 2>/dev/null || echo "unknown")
 success "corpus-client $INSTALLED_VER ready"
 
 # ── IMPORTANT: Disable auto-update to protect our patches ─────────────────
-# corpus-client auto-updates itself on every run (unless --skip-update is used)
+# corpus-client auto-updates itself on every run (unless is used)
 # This would wipe our patches silently. We handle this by:
-# 1. Always using --skip-update in our recommended run command
+# 1. Always using in our recommended run command
 # 2. Providing reapply.sh for after manual upgrades
-info "Note: corpus-client auto-updates on each run — use --skip-update to protect patches"
+info "Note: corpus-client auto-updates on each run — use to protect patches"
 
 # ── Step 4: Detect GPU ───────────────────────────────────────────────────
 step "Step 4/7  Detecting GPU..."
@@ -200,9 +200,9 @@ if [ "$GPU_BRAND" = "nvidia" ] && [ "$GPU_CC_MAJOR" -ge 12 ] 2>/dev/null; then
 fi
 
 if [ "$NEEDS_NO_COMPILE" = true ]; then
-  RUN_CMD="CORPUS_ASR_NO_COMPILE=1 corpus-client --skip-update volunteer-compute"
+  RUN_CMD="CORPUS_ASR_NO_COMPILE=1 corpus-client volunteer-compute"
 else
-  RUN_CMD="corpus-client --skip-update volunteer-compute"
+  RUN_CMD="corpus-client volunteer-compute"
 fi
 
 # ── Final Summary ─────────────────────────────────────────────────────────
@@ -223,14 +223,14 @@ echo "  │  To start contributing compute:                         │"
 echo "  │                                                         │"
 echo "  │    $RUN_CMD"
 echo "  │                                                         │"
-echo "  │  ⚠  Use --skip-update to protect patches from          │"
+echo "  │  ⚠  Use to protect patches from          │"
 echo "  │     corpus-client's auto-update system                  │"
 echo "  └─────────────────────────────────────────────────────────┘"
 echo ""
 echo "  Other useful commands:"
 echo ""
-echo "    corpus-client --skip-update login          # login to corpus API"
-echo "    corpus-client --skip-update profile        # check your compute hours"
+echo "    corpus-client login          # login to corpus API"
+echo "    corpus-client profile        # check your compute hours"
 echo "    bash $ROOT/verify.sh                       # verify GPU setup"
 echo "    bash $ROOT/reapply.sh                      # re-apply patches after upgrade"
 echo ""

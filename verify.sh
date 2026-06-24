@@ -18,8 +18,8 @@ header "Verification — corpus-volunteer-optimizer"
 
 step "corpus-client binary:"
 if command -v corpus-client &>/dev/null || [ -f "$HOME/.local/bin/corpus-client" ]; then
-  "$HOME/.local/bin/corpus-client" --skip-update version 2>/dev/null && success "  OK" || \
-  corpus-client --skip-update version 2>/dev/null && success "  OK" || \
+  "$HOME/.local/bin/corpus-client" version 2>/dev/null && success "  OK" || \
+  corpus-client version 2>/dev/null && success "  OK" || \
   warn "  corpus-client found but version check failed"
 else
   warn "  Not found — run: export PATH=\"\$HOME/.local/bin:\$PATH\""
@@ -86,4 +86,4 @@ else:
 
 echo ""
 success "Verification complete!"
-info "Run: corpus-client --skip-update volunteer-compute"
+info "Run: corpus-client volunteer-compute"
