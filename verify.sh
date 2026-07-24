@@ -2,27 +2,23 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ROOT/lib/utils/colors.sh"
 
-# Ensure local bin is in PATH
 export PATH="$HOME/.local/bin:$PATH"
 
-# Find corpus-client Python — read shebang from the binary
-CORPUS_CLIENT_BIN=$(which corpus-client 2>/dev/null || echo "$HOME/.local/bin/corpus-client")
-if [ -f "$CORPUS_CLIENT_BIN" ];
-then
+header "Verification -- corpus-volunteer-optimizer"
+
+# Find the corpus-client Python by reading the shebang of the corpus-client script itself.
+# This works across Linux / macOS / Windows(Git Bash) without guessing directory layouts.
+CORPUS_CLIENT_BIN=$(command -v corpus-client 2>/dev/null || echo "$HOME/.local/bin/corpus-client")
+CORPUS_PY=""
+if [ -f "$CORPUS_CLIENT_BIN" ]; then
   CORPUS_PY=$(head -1 "$CORPUS_CLIENT_BIN" | sed 's/#!//')
-else
-  CORPUS_PY=""
 fi
 
-header "Verification — corpus-volunteer-optimizer"
-
 step "corpus-client binary:"
-if command -v corpus-client &>/dev/null || [ -f "$HOME/.local/bin/corpus-client" ]; then
-  "$HOME/.local/bin/corpus-client" version 2>/dev/null && success "  OK" || \
-  corpus-client version 2>/dev/null && success "  OK" || \
-  warn "  corpus-client found but version check failed"
+if command -v corpus-client &>/dev/null; then
+  corpus-client version 2>/dev/null && success "  OK" || warn "  Found but version check failed"
 else
-  warn "  Not found — run: export PATH=\"\$HOME/.local/bin:\$PATH\""
+  warn "  Not in PATH -- run: export PATH=\"\$HOME/.local/bin:\$PATH\""
 fi
 
 step "Python environment:"
@@ -55,35 +51,41 @@ python3 -c "
 import glob
 from pathlib import Path
 home = Path.home()
-patterns = [
+asr_patterns = [
     str(home / '.local/share/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/asr.py'),
     str(home / 'Library/Application Support/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/asr.py'),
+    str(home / 'AppData/Roaming/uv/tools/corpus-client-cli/Lib/site-packages/corpus_client_cli/asr.py'),
 ]
 found = False
-for pat in patterns:
+for pat in asr_patterns:
     m = glob.glob(pat)
     if m:
         c = Path(m[0]).read_text()
-        print('  asr.py av.open fallback    :', 'APPLIED ✓' if '_open_strategies' in c else 'NOT APPLIED ✗')
-        print('  asr.py _safe_frames        :', 'APPLIED ✓' if '_safe_frames' in c else 'NOT APPLIED ✗')
+        print('  asr.py av.open fallback    :', 'APPLIED' if '_open_strategies' in c else 'NOT APPLIED')
+        print('  asr.py _safe_frames        :', 'APPLIED' if '_safe_frames' in c else 'NOT APPLIED')
         found = True
         break
 if not found:
     print('  asr.py : not found')
 
+vol_patterns = [
+    str(home / '.local/share/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/volunteer.py'),
+    str(home / 'Library/Application Support/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/volunteer.py'),
+    str(home / 'AppData/Roaming/uv/tools/corpus-client-cli/Lib/site-packages/corpus_client_cli/volunteer.py'),
+]
 vp = []
-for pat in [str(home / '.local/share/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/volunteer.py'),
-            str(home / 'Library/Application Support/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/volunteer.py')]:
+for pat in vol_patterns:
     vp = glob.glob(pat)
     if vp: break
 if vp:
     c = Path(vp[0]).read_text()
-    print('  volunteer.py duration      :', 'APPLIED ✓' if 'audio_duration < 100' in c else 'NOT APPLIED ✗')
-    print('  volunteer.py segments[:1000]:', 'APPLIED ✓' if 'segments[:1000]' in c else 'NOT APPLIED ✗')
+    print('  volunteer.py duration      :', 'APPLIED' if 'audio_duration < 100' in c else 'NOT APPLIED')
+    print('  volunteer.py segments[:1000]:', 'APPLIED' if 'segments[:1000]' in c else 'NOT APPLIED')
 else:
     print('  volunteer.py : not found')
 "
 
 echo ""
 success "Verification complete!"
-info "Run: corpus-client volunteer-compute"
+info "Run once:      corpus-client volunteer-compute --always"
+info "Run forever:   bash $ROOT/run_forever.sh"

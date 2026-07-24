@@ -1,11 +1,12 @@
 """
 Patches for corpus_client_cli/asr.py
-Tested against v0.1.1 of corpus-client-cli.
+Tested against v0.1.1 and v0.1.2 of corpus-client-cli.
+Uses multiple fallback patterns since upstream code structure changes between versions.
 
 Patches applied:
-  1. Fault-tolerant av.open() — 3-strategy fallback for corrupt containers
-  2. Packet-level _safe_frames() decoder — skips corrupt packets individually
-  3. _MAX_GPU_TRANSCRIBE_WORKERS — tuned based on VRAM
+  1. Fault-tolerant av.open() -- 3-strategy fallback for corrupt containers
+  2. Packet-level _safe_frames() decoder -- skips corrupt packets individually
+  3. _MAX_GPU_TRANSCRIBE_WORKERS -- tuned based on VRAM
 """
 import glob
 import re
@@ -17,10 +18,14 @@ sys.path.insert(0, str(ROOT / "lib" / "utils"))
 from logger import success, warn, error, step
 
 
-def find_asr_path() -> Path | None:
+def find_asr_path():
     patterns = [
+        # Linux
         str(Path.home() / ".local/share/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/asr.py"),
+        # macOS
         str(Path.home() / "Library/Application Support/uv/tools/corpus-client-cli/lib/python*/site-packages/corpus_client_cli/asr.py"),
+        # Windows
+        str(Path.home() / "AppData/Roaming/uv/tools/corpus-client-cli/Lib/site-packages/corpus_client_cli/asr.py"),
         "/usr/local/lib/python*/dist-packages/corpus_client_cli/asr.py",
     ]
     for pat in patterns:
@@ -30,17 +35,15 @@ def find_asr_path() -> Path | None:
     return None
 
 
-def patch_av_open(content: str) -> tuple[str, bool]:
+def patch_av_open(content):
     """
     Replace single av.open() call with 3-strategy fallback.
-    Handles corrupt containers that fail to open normally.
+    Tries multiple OLD patterns since quote style / whitespace varies by version.
     """
-    # Already patched?
-    if "_open_strategies" in content or "PATCH: 3-strategy" in content:
+    if "_open_strategies" in content:
         return content, False
 
-    # The exact pattern in v0.1.1
-    OLD = '''    try:
+    OLD_A = '''    try:
         container = _av.open(str(audio_path))
         audio_streams = [s for s in container.streams if s.type == "audio"]
         if not audio_streams:
@@ -55,6 +58,9 @@ def patch_av_open(content: str) -> tuple[str, bool]:
             f"Failed to decode audio from {audio_path.name}: {exc}. "
             "Ensure ffmpeg/libav is available and the file is a valid audio/video file."
         ) from exc'''
+
+    OLD_B = OLD_A.replace('"', "'")
+    OLD_C = "    container = _av.open(str(audio_path))"
 
     NEW = '''    # PATCH: 3-strategy av.open() fallback for corrupt containers
     _open_strategies = [
@@ -91,22 +97,23 @@ def patch_av_open(content: str) -> tuple[str, bool]:
             "Ensure ffmpeg/libav is available and the file is a valid audio/video file."
         ) from _last_exc'''
 
-    if OLD in content:
-        return content.replace(OLD, NEW), True
+    for OLD in (OLD_A, OLD_B, OLD_C):
+        if OLD in content:
+            return content.replace(OLD, NEW), True
+
     return content, False
 
 
-def patch_decoder(content: str) -> tuple[str, bool]:
+def patch_decoder(content):
     """
     Replace container.decode() iterator with packet-level _safe_frames().
     Skips corrupt packets individually instead of crashing the whole file.
     """
-    # Already patched?
     if "_safe_frames" in content:
         return content, False
 
     HELPER = '''        def _safe_frames(cont):
-            """Packet-level decoder — skips corrupt packets individually."""
+            """Packet-level decoder -- skips corrupt packets individually."""
             try:
                 for pkt in cont.demux(audio=0):
                     try:
@@ -119,43 +126,52 @@ def patch_decoder(content: str) -> tuple[str, bool]:
             yield None
 '''
 
-    # Pattern in v0.1.1 — itertools.chain style
-    OLD_WITH_CHAIN = (
-        "                frames = itertools.chain(container.decode(audio=0), [None])\n"
-        "                for frame in frames:"
-    )
-    NEW_WITH_CHAIN = "                for frame in _safe_frames(container):"
+    INSERTION_POINTS = [
+        "        try:\n            with container:",
+        "    try:\n        with container:",
+    ]
 
-    # Pattern without itertools (some versions)
-    OLD_WITHOUT_CHAIN = (
-        "                for frame in itertools.chain(container.decode(audio=0), [None]):"
-    )
-    NEW_WITHOUT_CHAIN = "                for frame in _safe_frames(container):"
+    insertion_found = None
+    for ip in INSERTION_POINTS:
+        if ip in content:
+            insertion_found = ip
+            break
 
-    # Insert helper before the try: with container: block
-    INSERTION_POINT = "        try:\n            with container:"
-    if INSERTION_POINT not in content:
+    if insertion_found is None:
         return content, False
 
-    content = content.replace(INSERTION_POINT, HELPER + INSERTION_POINT)
+    content = content.replace(insertion_found, HELPER + insertion_found)
 
-    if OLD_WITH_CHAIN in content:
-        content = content.replace(OLD_WITH_CHAIN, NEW_WITH_CHAIN)
-        return content, True
+    DECODE_PATTERNS = [
+        (
+            "                frames = itertools.chain(container.decode(audio=0), [None])\n"
+            "                for frame in frames:",
+            "                for frame in _safe_frames(container):",
+        ),
+        (
+            "                for frame in itertools.chain(container.decode(audio=0), [None]):",
+            "                for frame in _safe_frames(container):",
+        ),
+        (
+            "            frames = itertools.chain(container.decode(audio=0), [None])\n"
+            "            for frame in frames:",
+            "            for frame in _safe_frames(container):",
+        ),
+    ]
 
-    if OLD_WITHOUT_CHAIN in content:
-        content = content.replace(OLD_WITHOUT_CHAIN, NEW_WITHOUT_CHAIN)
-        return content, True
+    for old, new in DECODE_PATTERNS:
+        if old in content:
+            content = content.replace(old, new)
+            return content, True
 
-    # If neither decode pattern found but helper was inserted, still count as changed
     return content, True
 
 
-def patch_max_workers(content: str, vram_gb: float) -> tuple[str, bool]:
+def patch_max_workers(content, vram_gb):
     """
     Set _MAX_GPU_TRANSCRIBE_WORKERS based on available VRAM.
-    < 8GB VRAM → 1 worker (prevents CUDA OOM on long files)
-    >= 8GB VRAM → 2 workers (overlaps CPU decode with GPU inference)
+    < 8GB VRAM -> 1 worker (prevents CUDA OOM on long files)
+    >= 8GB VRAM -> 2 workers (overlaps CPU decode with GPU inference)
     """
     workers = 1 if float(vram_gb) < 8 else 2
     new_content = re.sub(
@@ -166,7 +182,7 @@ def patch_max_workers(content: str, vram_gb: float) -> tuple[str, bool]:
     return new_content, new_content != content
 
 
-def verify(path: Path) -> None:
+def verify(path):
     """Print patch status for each patch."""
     content = path.read_text("utf-8")
     patches = {
@@ -178,13 +194,13 @@ def verify(path: Path) -> None:
         if applied:
             success(f"  {name}")
         else:
-            warn(f"  {name} — NOT APPLIED")
+            warn(f"  {name} -- NOT APPLIED")
 
 
-def apply(vram_gb: float = 0) -> bool:
+def apply(vram_gb=0):
     path = find_asr_path()
     if not path:
-        error("asr.py not found — is corpus-client-cli installed?")
+        error("asr.py not found -- is corpus-client-cli installed?")
         error("Run: uv tool install git+https://code.swecha.org/corpus/corpus-client-cli")
         return False
 
@@ -192,36 +208,32 @@ def apply(vram_gb: float = 0) -> bool:
     content = path.read_text("utf-8")
     any_changed = False
 
-    # Patch 1 — av.open() fallback
     content, changed = patch_av_open(content)
     if changed:
-        success("  av.open() 3-strategy fallback — applied")
+        success("  av.open() 3-strategy fallback -- applied")
         any_changed = True
     else:
-        warn("  av.open() patch — already applied or pattern not found")
+        warn("  av.open() patch -- already applied or pattern not found")
 
-    # Patch 2 — packet-level decoder
     content, changed = patch_decoder(content)
     if changed:
-        success("  _safe_frames() packet decoder — applied")
+        success("  _safe_frames() packet decoder -- applied")
         any_changed = True
     else:
-        warn("  _safe_frames() patch — already applied or pattern not found")
+        warn("  _safe_frames() patch -- already applied or pattern not found")
 
-    # Patch 3 — max workers
     content, changed = patch_max_workers(content, vram_gb)
     if changed:
         workers = 1 if float(vram_gb) < 8 else 2
         success(f"  _MAX_GPU_TRANSCRIBE_WORKERS = {workers} (VRAM: {vram_gb}GB)")
         any_changed = True
     else:
-        warn("  _MAX_GPU_TRANSCRIBE_WORKERS — already set or pattern not found")
+        warn("  _MAX_GPU_TRANSCRIBE_WORKERS -- already set or pattern not found")
 
     if any_changed:
         path.write_text(content, "utf-8")
         success(f"  Saved {path.name}")
 
-    # Always verify final state
     verify(path)
     return True
 
