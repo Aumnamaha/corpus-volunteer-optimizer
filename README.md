@@ -315,18 +315,21 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full guide.
 
 ## Test Results
 
+All entries below are **verified via the actual repo scripts** (`setup.sh` / `setup.ps1` end-to-end),
+not manual patching.
+
 | Tester | OS | GPU | Status |
 |--------|----|----|--------|
 | Aum | Arch Linux | RTX 5070 Ti (12GB), CUDA 13.3 | ✅ ~600× real-time |
-| Aum | Fedora Linux | RTX 5070 Ti (12GB), CUDA 13.3, driver 610.43 | ✅ Full clean setup.sh run |
-| Aum | Windows 11 | RTX 5070 Ti (12GB), CUDA 13.3 | ✅ GPU transcription confirmed |
-| Aum | macOS (M1, 8GB) | Apple Silicon MPS | ✅ All patches verified |
+| Aum | Fedora Linux | RTX 5070 Ti (12GB), CUDA 13.3, driver 610.43 | ✅ Clean `setup.sh` run, all patches verified |
+| Aum | Windows 11 | RTX 5070 Ti (12GB), CUDA 13.3 | ✅ Clean `setup.ps1` run, all patches verified |
+| Aum | macOS (M1, 8GB) | Apple Silicon MPS | ✅ Clean `setup.sh` run, all patches verified |
 | — | Arch Linux | AMD GPU | 🔄 pending |
 | — | Windows | Intel Arc | 🔄 pending |
 | — | Linux | No dGPU (CPU) | 🔄 pending |
 | — | Linux | RTX 3050 | 🔄 pending |
 
-*Running tests across different hardware — results will be updated as they come in.*
+*3 operating systems fully verified. Still gathering results for AMD, Intel Arc, CPU-only, and older NVIDIA cards.*
 
 ---
 
