@@ -20,6 +20,111 @@ This tool detects your hardware and configures everything automatically:
 
 ---
 
+## ⚡ Step 0 — Install Prerequisites (Do This First!)
+
+Before cloning the repo, make sure these are installed.
+**If any of these are missing, `setup.sh` will fail.**
+
+### Check what you have
+
+```bash
+git --version      # need 2.0+
+python3 --version  # need 3.11+
+uv --version        # need 0.5+
+```
+
+### Install missing tools
+
+#### Ubuntu / Debian / Linux Mint
+```bash
+sudo apt update
+sudo apt install -y git python3 python3-pip curl
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+```
+
+#### Arch Linux / Manjaro
+```bash
+sudo pacman -S git python
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+```
+
+#### Fedora / RHEL / CentOS
+```bash
+sudo dnf install -y git python3 curl
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+```
+
+#### macOS
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install git python
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.zshrc
+```
+
+#### Windows (PowerShell — Run as Administrator)
+```powershell
+winget install --id Git.Git -e --source winget
+winget install --id Python.Python.3.12 -e --source winget
+powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# Restart PowerShell after installing
+```
+
+Verify all three work before proceeding: `git --version`, `python3 --version`, `uv --version`.
+
+---
+
+## 🚀 Quick Start
+
+### Step 1 — Clone the repo
+
+```bash
+git clone https://github.com/Aumnamaha/corpus-volunteer-optimizer
+cd corpus-volunteer-optimizer
+```
+
+### Step 2 — Run setup (one command does everything)
+
+```bash
+bash setup.sh          # Linux / macOS
+.\setup.ps1             # Windows (PowerShell)
+# or double-click setup.bat on Windows
+```
+
+### Step 3 — Login to Corpus API
+
+```bash
+corpus-client login
+# Environment: prod
+# Phone: +91XXXXXXXXXX
+# Password: your password
+```
+
+### Step 4 — Start Contributing Compute
+
+```bash
+# Single batch, unattended (recommended — no prompts):
+corpus-client volunteer-compute --always
+
+# Keep running continuously until you stop it (Ctrl+C):
+bash run_forever.sh     # Linux / macOS
+.\run_forever.ps1        # Windows
+```
+
+> **Why `run_forever`?** `--always` clears one batch (usually 20 records) then exits.
+> `run_forever.sh` / `.ps1` loops it automatically so you don't have to keep re-running it by hand.
+
+### One-liner (Linux / macOS)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Aumnamaha/corpus-volunteer-optimizer/main/setup.sh | bash
+```
+
+---
+
 ## Speed Comparison
 
 | Hardware | Mode | Approx Speed |
@@ -44,79 +149,11 @@ This tool detects your hardware and configures everything automatically:
 | Linux | AMD RX 5000 / 6000 / 7000 | ✅ Supported | ROCm 6.x |
 | Linux | Intel Arc A-series | ✅ Supported | IPEX |
 | Linux | No GPU | ✅ CPU fallback | Works out of the box |
-| macOS | Apple Silicon M1 / M2 / M3 / M4 | ✅ Supported | MPS built into PyTorch |
+| macOS | Apple Silicon M1 / M2 / M3 / M4 | ✅ Tested | MPS built into PyTorch |
 | macOS | Intel Mac | ✅ CPU fallback | No GPU acceleration |
-| Windows | NVIDIA GTX 900+ / RTX 2000–5000 | ✅ Supported | CUDA auto-detected |
+| Windows | NVIDIA GTX 900+ / RTX 2000–5000 | ✅ Tested | CUDA auto-detected |
 | Windows | Intel Arc | ✅ Supported | IPEX |
 | Windows | AMD GPU | ⚠️ CPU fallback | ROCm not on Windows |
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.11+ installed
-- `uv` installed — if not: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- Git installed
-- Internet connection
-
-### Linux / macOS
-
-```bash
-git clone https://github.com/Aumnamaha/corpus-volunteer-optimizer
-cd corpus-volunteer-optimizer
-bash setup.sh
-```
-
-### Windows
-
-```powershell
-git clone https://github.com/Aumnamaha/corpus-volunteer-optimizer
-cd corpus-volunteer-optimizer
-.\setup.ps1
-# or double-click setup.bat
-```
-
-### One-liner (Linux / macOS)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Aumnamaha/corpus-volunteer-optimizer/main/setup.sh | bash
-```
-
----
-
-## After Setup
-
-### Login to Corpus API
-
-```bash
-corpus-client login
-# Environment: prod
-# Phone: +91XXXXXXXXXX
-# Password: your password
-```
-
-### Start Contributing Compute
-
-```bash
-# All GPUs except Blackwell (RTX 5000 series):
-corpus-client volunteer-compute
-
-# NVIDIA Blackwell only (RTX 5070 Ti, 5080, 5090):
-CORPUS_ASR_NO_COMPILE=1 corpus-client volunteer-compute
-```
-
-> **Note on auto-updates:**
-> `corpus-client` auto-updates itself on every run. An auto-update wipes our patches.
-> corpus-client v0.1.1 removed the `--skip-update` flag. If patches break after an auto-update, run: `bash reapply.sh`
-> If an update does happen, re-apply patches with `bash reapply.sh`.
-
-### Check Your Compute Hours
-
-```bash
-corpus-client profile
-```
 
 ---
 
@@ -131,15 +168,12 @@ corpus-client profile
 | `segments[:1000]` truncation | `volunteer.py` | Server rejects uploads with >1000 segments |
 | GPU env vars | `~/.bashrc` etc | `CORPUS_ASR_NO_COMPILE=1` for Blackwell, ROCm flags for AMD |
 
----
-
-## Re-applying Patches After Upgrade
-
-If `corpus-client` auto-updates and patches get wiped:
+**On auto-updates:** `corpus-client` auto-updates itself on every run, which can wipe these patches.
+If patches break after an update, just re-apply them:
 
 ```bash
 bash reapply.sh     # Linux / macOS
-.\reapply.ps1       # Windows
+.\reapply.ps1        # Windows
 ```
 
 ---
@@ -148,7 +182,7 @@ bash reapply.sh     # Linux / macOS
 
 ```bash
 bash verify.sh      # Linux / macOS
-.\verify.ps1        # Windows
+.\verify.ps1         # Windows
 ```
 
 Expected output:
@@ -156,9 +190,11 @@ Expected output:
 ✓ corpus-client installed
 ✓ PyTorch with CUDA/MPS/ROCm/XPU
 ✓ GPU detected: NVIDIA GeForce RTX XXXX
-✓ asr.py patched
-✓ volunteer.py patched
-Ready to contribute compute!
+✓ asr.py av.open fallback    : APPLIED
+✓ asr.py _safe_frames        : APPLIED
+✓ volunteer.py duration      : APPLIED
+✓ volunteer.py segments[:1000]: APPLIED
+Verification complete!
 ```
 
 ---
@@ -206,19 +242,36 @@ All other patches (fault-tolerant decoder, duration filter, segments limit) stil
 
 ## Troubleshooting
 
-**patches break after update:**
-```bash
-bash reapply.sh
-```
+**`git: command not found` / `uv: command not found` / `python3: command not found`:**
+See the Prerequisites section above.
 
-**`corpus-client: command not found`:**
+**`corpus-client: command not found` after setup:**
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
+
+**`CUDA` shows as `unknown` during GPU detection:**
+Newer NVIDIA drivers (610+) print `CUDA UMD Version:` instead of the older `CUDA Version:` label.
+This is handled automatically as of the latest `detect_gpu.py` — if you still see `unknown`,
+pull the latest repo changes (`git pull origin main`) and re-run `setup.sh`.
 
 **`CUDA not available` after setup:**
 ```bash
 bash verify.sh  # shows exactly what's wrong
+```
+
+**patches break after `corpus-client` auto-update:**
+```bash
+bash reapply.sh
+```
+
+**`--always` stops after one batch:**
+That's expected — `--always` only clears one pledge batch. Use the continuous loop instead:
+```bash
+bash run_forever.sh     # Linux / macOS
+.\run_forever.ps1         # Windows
 ```
 
 Full troubleshooting guide: [docs/troubleshooting.md](docs/troubleshooting.md)
@@ -230,6 +283,7 @@ Full troubleshooting guide: [docs/troubleshooting.md](docs/troubleshooting.md)
 ```
 corpus-volunteer-optimizer/
 ├── setup.sh / setup.ps1 / setup.bat   ← Main entry point
+├── run_forever.sh / run_forever.ps1   ← Continuous compute loop
 ├── reapply.sh / reapply.ps1           ← Re-patch after upgrade
 ├── verify.sh / verify.ps1             ← Post-install verification
 ├── lib/
@@ -253,33 +307,33 @@ Found a bug? Tested on a new GPU? Please contribute!
 - Add CUDA/ROCm version support → edit `config/cuda_map.json` or `config/rocm_map.json`
 - Add GPU quirk → edit `config/gpu_quirks.json`
 - Fix a patch → edit `lib/patch/patch_asr.py` or `lib/patch/patch_volunteer.py`
+- Test on new hardware → open an issue with your `bash verify.sh` output
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full guide.
-
-**Test results from different hardware are especially valuable** — open an issue with your
-`bash verify.sh` output and we'll add it to the benchmarks table.
 
 ---
 
 ## Test Results
 
-| Tester | OS | GPU | Speed | Status |
-|--------|----|----|-------|--------|
-| Aum | Arch Linux | RTX 5070 Ti (12GB) | ~600× | ✅ |
-| Aum | Fedora Linux | RTX 5070 Ti (12GB) | ~500× | ✅ |
-| — | Arch Linux | AMD GPU | pending | 🔄 |
-| — | Windows | Intel Arc | pending | 🔄 |
-| — | Linux | No dGPU (CPU) | pending | 🔄 |
-| — | Linux | RTX 3050 | pending | 🔄 |
+| Tester | OS | GPU | Status |
+|--------|----|----|--------|
+| Aum | Arch Linux | RTX 5070 Ti (12GB), CUDA 13.3 | ✅ ~600× real-time |
+| Aum | Fedora Linux | RTX 5070 Ti (12GB), CUDA 13.3, driver 610.43 | ✅ Full clean setup.sh run |
+| Aum | Windows 11 | RTX 5070 Ti (12GB), CUDA 13.3 | ✅ GPU transcription confirmed |
+| Aum | macOS (M1, 8GB) | Apple Silicon MPS | ✅ All patches verified |
+| — | Arch Linux | AMD GPU | 🔄 pending |
+| — | Windows | Intel Arc | 🔄 pending |
+| — | Linux | No dGPU (CPU) | 🔄 pending |
+| — | Linux | RTX 3050 | 🔄 pending |
 
-*Running tests across different hardware — results will be updated.*
+*Running tests across different hardware — results will be updated as they come in.*
 
 ---
 
 ## Credits
 
-Patches discovered and battle-tested on Arch Linux + Fedora with RTX 5070 Ti (Blackwell, CUDA 13.3)
-during **Viswam.ai SoAI 2026** internship.
+Patches discovered and battle-tested on Arch Linux, Fedora, Windows, and macOS with
+RTX 5070 Ti (Blackwell, CUDA 13.3) and Apple M1 during **Viswam.ai SoAI 2026** internship.
 
 **Author:** Thirunagari Aum Namaha ([@Aumnamaha](https://github.com/Aumnamaha))
 **Team:** Abyss — SoAI 2026, GITAM University Hyderabad
